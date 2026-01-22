@@ -1,0 +1,36 @@
+name: "🌱 Child Idea / Подзадача"
+description: Добавить подзадачу или идею, связанную с существующей фичей или эпиком
+title: "[Child]"
+labels: ["idea", "subtask"]
+assignees: []
+
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Описание идеи
+      description: Что именно ты хочешь реализовать или протестировать?
+      placeholder: "Пример: Добавить механизм определения редкости предмета через веса в таблице items."
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Возможная реализация
+      description: Как можно это реализовать (по шагам или общая логика)
+      placeholder: |
+        - Добавить колонку rarity в таблицу items
+        - Реализовать сервис выбора предмета по весу
+        - Интегрировать в CaseService
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Комментарии и связи
+      description: Любые дополнительные детали — зависимости, блокеры, идеи
+      placeholder: "Например: зависит от #34 (InventoryService events)"
+    validations:
+      required: false

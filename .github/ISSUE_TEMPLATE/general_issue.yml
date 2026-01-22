@@ -1,0 +1,40 @@
+name: "⚙️ General Issue"
+description: Создать новую задачу, баг или улучшение для Rust Skin Backend
+title: "[Parent]"
+labels: ["backend", "needs-triage"]
+assignees: []
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Описание
+      description: Подробно опиши задачу. Что нужно реализовать или исправить?
+      placeholder: "Пример: Добавить API /cases/open для открытия кейса и интегрировать с Inventory Service..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги для воспроизведения (если баг)
+      placeholder: |
+        1. Открыть страницу ...
+        2. Отправить запрос ...
+        3. Получить ошибку ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ожидаемый результат
+      placeholder: "Что должно происходить после исправления / реализации?"
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Дополнительные заметки
+      description: Линки, скриншоты, комментарии, идеи и т.д.
+      placeholder: "Пример: Возможно, стоит вынести логику открытия кейсов в отдельный worker через RabbitMQ."
+  

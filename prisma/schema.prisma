@@ -8,14 +8,17 @@ datasource db {
 }
 
 model Music {
-  id        String      @id @default(uuid())
-  title     String
-  author    String
-  album     String?
-  duration  Int      // duration in seconds
-  linkToYm String 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  title       String
+  author      String
+  releaseDate Int
+  description String
+  duration    Int // duration in seconds
+  album       String?
+  genre MusicGenres
+  linkToYm    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Image {
@@ -27,5 +30,23 @@ model Image {
 }
 
 enum MusicGenres {
-  
+  ROCK
+  HIP_HOP
+  POP
+  ELECTRONIC
+  COUNTRY
+  RAP
+  JAZZ
+  CLASSICAL
+  ALTERNATIVE
+  TECHNO
+  METAL
+  K_POP
+  FOLK
+  RIFF
+  DECO
+  SOUL
+  BASS
+  INDIE_ROCK
+  ALT_METAL
 }

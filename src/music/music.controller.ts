@@ -3,9 +3,9 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
+  Put,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
 import { CreateMusicDto } from './dto/create-music.dto';
@@ -27,16 +27,16 @@ export class MusicController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.musicService.findOne(+id);
+    return this.musicService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(@Param('id') id: string, @Body() updateMusicDto: UpdateMusicDto) {
-    return this.musicService.update(+id, updateMusicDto);
+    return this.musicService.update(id, updateMusicDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.musicService.remove(+id);
+    return this.musicService.remove(id);
   }
 }

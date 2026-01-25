@@ -4,10 +4,10 @@ import {
   ValidationArguments,
 } from 'class-validator';
 
-export function FormatData(validationOptions?: ValidationOptions) {
+export function FormatDate(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
-      name: 'FormatData',
+      name: 'FormatDate',
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,

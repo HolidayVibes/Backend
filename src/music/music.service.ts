@@ -3,6 +3,11 @@ import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Music } from '@prisma/client';
+import {
+  PaginationPayload,
+  PaginationResponse,
+} from 'src/common/interfaces/pagination.interface';
+import { paginate } from 'src/common/utils/pagination.util';
 
 @Injectable()
 export class MusicService {
@@ -16,8 +21,14 @@ export class MusicService {
     return music;
   }
 
-  async findAll() {
-    return `This action returns all music`;
+  async findAll(
+    payload: PaginationPayload,
+  ): Promise<PaginationResponse<Music>> {
+    const items = await this.prisma.music.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return paginate<Music>(items, payload);
   }
 
   async findOne(id: string): Promise<Music> {

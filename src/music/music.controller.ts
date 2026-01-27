@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Put,
+  Query,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
 import { CreateMusicDto } from './dto/create-music.dto';
@@ -21,8 +22,8 @@ export class MusicController {
   }
 
   @Get()
-  findAll() {
-    return this.musicService.findAll();
+  findAll(@Query('page') page: number, @Query('per_page') per_page: number) {
+    return this.musicService.findAll({ page, per_page });
   }
 
   @Get(':id')

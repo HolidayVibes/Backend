@@ -8,7 +8,7 @@ export function paginate<T>(
   items: T[],
   payload: PaginationPayload,
 ): PaginationResponse<T> {
-  const { per_page = 10, page = 1 } = payload;
+  const { page = 1, per_page = 10 } = payload;
 
   const paginatedItems = items.slice((page - 1) * per_page, page * per_page);
   const total_pages = Math.ceil(items.length / per_page);

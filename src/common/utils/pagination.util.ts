@@ -2,7 +2,7 @@ import {
   PaginationMeta,
   PaginationPayload,
   PaginationResponse,
-} from '../interfaces/pagination/pagination.interface';
+} from '../interfaces/pagination.interface';
 
 export function paginate<T>(
   items: T[],

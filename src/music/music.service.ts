@@ -8,10 +8,14 @@ import {
   PaginationResponse,
 } from 'src/common/interfaces/pagination.interface';
 import { paginate } from 'src/common/utils/pagination.util';
+import { YStorageService } from 'src/y-storage/y-storage.service';
 
 @Injectable()
 export class MusicService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly yStorageService: YStorageService,
+  ) {}
 
   async create(createMusicDto: CreateMusicDto) {
     const music = await this.prisma.music.create({

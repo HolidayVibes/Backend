@@ -9,6 +9,7 @@ import {
 } from 'src/common/interfaces/pagination.interface';
 import { paginate } from 'src/common/utils/pagination.util';
 import { YStorageService } from 'src/y-storage/y-storage.service';
+import { generateFileName } from 'src/common/utils/fileName.util';
 
 @Injectable()
 export class MusicService {
@@ -17,9 +18,30 @@ export class MusicService {
     private readonly yStorageService: YStorageService,
   ) {}
 
-  async create(createMusicDto: CreateMusicDto) {
+  private readonly bucketName = process.env['MUSIC_BACKET']!;
+
+  async create(
+    createMusicDto: CreateMusicDto,
+    file: Express.Multer.File,
+  ): Promise<Music> {
+    const url = await this.yStorageService
+      .convertToWebP(file, 80)
+      .then((buffer) => {
+        const key = `music/${generateFileName(file.originalname)}.webp`;
+        return this.yStorageService
+          .sendToYandex({
+            file: buffer,
+            key,
+            contentType: 'image/webp',
+            bucket_name: this.bucketName,
+          })
+          .then(
+            () => `https://${this.bucketName}.storage.yandexcloud.net/${key}`,
+          );
+      });
+
     const music = await this.prisma.music.create({
-      data: createMusicDto,
+      data: { ...createMusicDto, imgUrl: url },
     });
 
     return music;

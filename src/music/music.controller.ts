@@ -7,18 +7,29 @@ import {
   Delete,
   Put,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('music')
 export class MusicController {
   constructor(private readonly musicService: MusicService) {}
 
   @Post()
-  create(@Body() createMusicDto: CreateMusicDto) {
-    return this.musicService.create(createMusicDto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  create(
+    @Body() createMusicDto: CreateMusicDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.musicService.create(createMusicDto, file);
   }
 
   @Get()

@@ -1,4 +1,5 @@
 import { MusicGenres } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsNumber,
@@ -17,6 +18,7 @@ export class CreateMusicDto {
   @IsString()
   author: string;
 
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   @Min(1000)
@@ -28,6 +30,7 @@ export class CreateMusicDto {
   @IsString()
   description: string;
 
+  @Type(() => Number)
   @IsNumber()
   @IsNotEmpty()
   duration: number;

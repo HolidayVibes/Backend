@@ -8,17 +8,18 @@ datasource db {
 }
 
 model Music {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   title       String
   author      String
   releaseDate Int
   description String
   duration    Int // duration in seconds
   album       String?
-  genre MusicGenres
+  imgUrl      String
+  genre       MusicGenres
   linkToYm    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Image {

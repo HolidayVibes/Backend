@@ -4,7 +4,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MusicModule } from './music/music.module';
 import { YStorageModule } from './y-storage/y-storage.module';
 import { MulterModule } from '@nestjs/platform-express';
-import multer from 'multer';
+import * as multer from 'multer';
+
 @Module({
   imports: [
     ConfigModule.forRoot({

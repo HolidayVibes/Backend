@@ -1,7 +1,7 @@
 import { Global, Injectable } from '@nestjs/common';
-import sharp from 'sharp';
+import * as sharp from 'sharp';
 import { createS3Client } from 'src/common/config/s3.config';
-import { PutObjectCommand } from '@aws-sdk/client-s3/dist-types/commands/PutObjectCommand';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
 import type {
   SendToYandexResponse,
   SendToYandexPayload,

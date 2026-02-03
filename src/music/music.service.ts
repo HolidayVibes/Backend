@@ -36,7 +36,7 @@ export class MusicService {
             bucket_name: this.bucketName,
           })
           .then(
-            () => `https://${this.bucketName}.storage.yandexcloud.net/${key}`,
+            () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
           );
       });
 

@@ -7,9 +7,20 @@ import { CreateUserDto } from './dto/create.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from '@prisma/client';
 import { UpdateUserDto } from './dto/update.dto';
+import { YStorageService } from 'src/y-storage/y-storage.service';
+import { generateFileName } from 'src/common/utils/fileName.util';
+import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class UserService {
-  constructor(private readonly prismaService: PrismaService) {}
+  private readonly bucketName: string;
+
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly yStorageService: YStorageService,
+    private readonly configService: ConfigService,
+  ) {
+    this.bucketName = this.configService.getOrThrow<string>('USER_BACKET');
+  }
 
   async get(id: string) {
     const user = await this.prismaService.user.findUnique({
@@ -43,7 +54,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: string, dto: UpdateUserDto, avatar: Express.Multer.File) {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
@@ -53,6 +64,24 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('Пользователь с таким id не найден');
     }
+
+    const url = await this.yStorageService
+      .convertToWebP(avatar, 80)
+      .then((buffer) => {
+        const key = `${user.id}/avatar/${generateFileName(avatar.originalname)}.webp`;
+        return this.yStorageService
+          .sendToYandex({
+            file: buffer,
+            key,
+            contentType: 'image/webp',
+            bucket_name: this.bucketName,
+          })
+          .then(
+            () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
+          );
+      });
+
+    dto.avatarUrl = url;
 
     const updatedUser = await this.prismaService.user.update({
       where: {

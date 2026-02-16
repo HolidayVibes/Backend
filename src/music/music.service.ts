@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -104,8 +108,6 @@ export class MusicService {
 
     if (music.imgUrl) {
       const key = music.imgUrl.split('/').slice(-2).join('/');
-
-      console.log(key, music.imgUrl);
 
       await this.yStorageService.deleteFromYandex(key, this.bucketName);
     }

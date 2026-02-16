@@ -9,11 +9,13 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { MusicService } from './music.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { fileTypeFromBuffer } from 'file-type';
 
 @Controller('music')
 export class MusicController {
@@ -25,10 +27,16 @@ export class MusicController {
       limits: { fileSize: 10 * 1024 * 1024 },
     }),
   )
-  create(
+  async create(
     @Body() createMusicDto: CreateMusicDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    const type = await fileTypeFromBuffer(file.buffer);
+
+    if (!type || type.mime !== 'image/png') {
+      throw new BadRequestException('Разрешены только PNG файлы');
+    }
+
     return this.musicService.create(createMusicDto, file);
   }
 

@@ -10,15 +10,19 @@ import {
 import { paginate } from 'src/common/utils/pagination.util';
 import { YStorageService } from 'src/y-storage/y-storage.service';
 import { generateFileName } from 'src/common/utils/fileName.util';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MusicService {
+  private readonly bucketName: string;
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     private readonly yStorageService: YStorageService,
-  ) {}
-
-  private readonly bucketName = process.env['MUSIC_BACKET']!;
+  ) {
+    this.bucketName = this.configService.getOrThrow<string>('MUSIC_BACKET');
+  }
 
   async create(
     createMusicDto: CreateMusicDto,
@@ -90,10 +94,24 @@ export class MusicService {
   }
 
   async remove(id: string) {
-    const music = await this.prisma.music.delete({
-      where: {
-        id,
-      },
+    const music = await this.prisma.music.findUnique({
+      where: { id },
+    });
+
+    if (!music) {
+      throw new NotFoundException(`Music with ID ${id} not found`);
+    }
+
+    if (music.imgUrl) {
+      const key = music.imgUrl.split('/').slice(-2).join('/');
+
+      console.log(key, music.imgUrl);
+
+      await this.yStorageService.deleteFromYandex(key, this.bucketName);
+    }
+
+    await this.prisma.music.delete({
+      where: { id },
     });
 
     return music;

@@ -7,6 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String
+  firstName    String @map("first_name")
+  lastName     String @map("last_name")
+  birthDate    String  @map("birth_day")
+  avatarUrl    String?
+
+  role            UserRole @default(USER)
+  isEmailVerified Boolean  @default(false)
+
+  refreshTokenHash String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  @@map("users")
+  @@index([email, id])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
 model Music {
   id          String      @id @default(uuid())
   title       String
@@ -20,6 +48,9 @@ model Music {
   linkToYm    String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  @@map("music")
+  @@index([title, author])
 }
 
 model Image {
@@ -28,6 +59,8 @@ model Image {
   altText   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("images")
 }
 
 enum MusicGenres {

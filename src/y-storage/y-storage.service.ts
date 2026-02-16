@@ -1,7 +1,7 @@
 import { Global, Injectable } from '@nestjs/common';
 import * as sharp from 'sharp';
 import { createS3Client } from 'src/common/config/s3.config';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import type {
   SendToYandexResponse,
   SendToYandexPayload,
@@ -39,5 +39,16 @@ export class YStorageService {
     return await sharp(file.buffer)
       .webp({ quality: quality || 70 })
       .toBuffer();
+  }
+
+  public async deleteFromYandex(key: string, bucket_name: string) {
+    const client = createS3Client();
+
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: bucket_name,
+        Key: key,
+      }),
+    );
   }
 }

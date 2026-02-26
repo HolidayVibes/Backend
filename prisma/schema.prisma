@@ -11,28 +11,44 @@ model User {
   id           String  @id @default(uuid())
   email        String  @unique
   passwordHash String
-  firstName    String @map("first_name")
-  lastName     String @map("last_name")
+  firstName    String  @map("first_name")
+  lastName     String  @map("last_name")
   birthDate    String  @map("birth_day")
-  avatarUrl    String?
+  avatarUrl    String? @map("avatar_url")
 
-  role            UserRole @default(USER)
-  isEmailVerified Boolean  @default(false)
+  role UserRole @default(USER)
+
+  isEmailVerified    Boolean             @default(false)
+  emailVerifications EmailVerification[]
 
   refreshTokenHash String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  deletedAt DateTime?
-
-  @@map("users")
   @@index([email, id])
+  @@map("users")
 }
 
 enum UserRole {
   USER
   ADMIN
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid())
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+
+  attemptCount Int @default(0) @map("attempt_count")
+
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_verifications")
 }
 
 model Music {
@@ -49,8 +65,8 @@ model Music {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  @@map("music")
   @@index([title, author])
+  @@map("music")
 }
 
 model Image {

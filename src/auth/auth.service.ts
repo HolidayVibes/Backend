@@ -15,22 +15,26 @@ import { hash, verify } from 'argon2';
 import { LoginDto } from './dto/login.dto';
 import { RequestWithCookies } from './intrerfaces/cookie.interface';
 import { UserService } from 'src/user/user.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
-  private readonly JWT_ACCES_TOKEN_TTL: string;
+  private readonly JWT_ACCESS_TOKEN_TTL: string;
   private readonly JWT_REFRESH_TOKEN_TTL: string;
 
   private readonly COOKIE_TTL: string;
   private readonly COOKIE_DOMAIN: string;
 
+  private readonly EMAIL_TTL: string;
+
   constructor(
     private readonly configService: ConfigService,
-    private readonly jwtServise: JwtService,
+    private readonly jwtService: JwtService,
     private readonly prismaService: PrismaService,
     private readonly userService: UserService,
+    private readonly mailService: MailService,
   ) {
-    this.JWT_ACCES_TOKEN_TTL = this.configService.getOrThrow<string>(
+    this.JWT_ACCESS_TOKEN_TTL = this.configService.getOrThrow<string>(
       'JWT_ACCESS_TOKEN_TTL',
     );
 
@@ -40,23 +44,44 @@ export class AuthService {
 
     this.COOKIE_DOMAIN = this.configService.getOrThrow<string>('COOKIE_DOMAIN');
     this.COOKIE_TTL = this.configService.getOrThrow<string>('COOKIE_TTL');
+
+    this.EMAIL_TTL = this.configService.getOrThrow<string>('EMAIL_TTL');
   }
 
-  public async register(
-    res: Response,
-    dto: RegisterDto,
-  ): Promise<{ accesToken: string }> {
+  public async register(res: Response, dto: RegisterDto) {
     dto.passwordHash = await hash(dto.passwordHash);
 
     const user = await this.userService.create(dto);
 
-    return this.auth(res, user.id);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(
+      Date.now() + ms(this.EMAIL_TTL as ms.StringValue),
+    );
+
+    await this.prismaService.emailVerification.upsert({
+      where: {
+        userId: user.id,
+      },
+      update: {
+        codeHash: await hash(code),
+        expiresAt,
+        attemptCount: 0,
+      },
+      create: {
+        codeHash: await hash(code),
+        expiresAt,
+        user: {
+          connect: { id: user.id },
+        },
+      },
+    });
+
+    await this.mailService.sendVerificationEmail(user.email, code);
+
+    await this.auth(res, user.id);
   }
 
-  public async login(
-    res: Response,
-    dto: LoginDto,
-  ): Promise<{ accesToken: string }> {
+  public async login(res: Response, dto: LoginDto) {
     const { email, password } = dto;
 
     const user = await this.prismaService.user.findUnique({
@@ -79,20 +104,17 @@ export class AuthService {
       throw new NotFoundException('Неверная пара логина и пароля');
     }
 
-    return this.auth(res, user.id);
+    await this.auth(res, user.id);
   }
 
-  public async refresh(
-    req: RequestWithCookies,
-    res: Response,
-  ): Promise<{ accesToken: string }> {
+  public async refresh(req: RequestWithCookies, res: Response) {
     const refreshToken = req.cookies['refreshToken'];
 
     if (!refreshToken) {
       throw new UnauthorizedException('Не действительный токен');
     }
 
-    const payload: JWTPayload = await this.jwtServise.verify(refreshToken);
+    const payload: JWTPayload = await this.jwtService.verify(refreshToken);
 
     if (!payload) {
       throw new UnauthorizedException('Не действительный токен');
@@ -120,19 +142,66 @@ export class AuthService {
       throw new UnauthorizedException('Не действительный токен');
     }
 
-    return this.auth(res, payload.id);
+    await this.auth(res, payload.id);
   }
 
   public async logout(res: Response): Promise<void> {
-    this.setCookie(res, 'refreshToken', new Date());
+    this.setCookie(
+      res,
+      { refreshToken: 'refreshToken', accessToken: 'accessToken' },
+      new Date(),
+    );
+  }
+
+  public async verifyEmail(userId: string, code: string, res: Response) {
+    const verification = await this.prismaService.emailVerification.findUnique({
+      where: { userId },
+    });
+
+    if (!verification) {
+      throw new NotFoundException('Код не найден');
+    }
+
+    if (verification.attemptCount >= 5) {
+      throw new UnauthorizedException('Слишком много попыток');
+    }
+
+    if (new Date() > verification.expiresAt) {
+      throw new UnauthorizedException('Неверный или истекший код');
+    }
+
+    const isCodeValid = await verify(verification.codeHash, code);
+
+    if (!isCodeValid) {
+      await this.prismaService.emailVerification.update({
+        where: { userId },
+        data: {
+          attemptCount: { increment: 1 },
+        },
+      });
+
+      throw new UnauthorizedException('Неверный или истекший код');
+    }
+
+    await this.prismaService.$transaction([
+      this.prismaService.user.update({
+        where: { id: userId },
+        data: { isEmailVerified: true },
+      }),
+      this.prismaService.emailVerification.delete({
+        where: { userId },
+      }),
+    ]);
+
+    await this.auth(res, userId);
   }
 
   private async auth(res: Response, id: string) {
-    const { accesToken, refreshToken } = this.generateTokens(id);
+    const tokens = await this.generateTokens(id);
 
     this.setCookie(
       res,
-      refreshToken,
+      tokens,
       new Date(Date.now() + ms(this.COOKIE_TTL as ms.StringValue)),
     );
 
@@ -141,43 +210,70 @@ export class AuthService {
         id,
       },
       data: {
-        refreshTokenHash: await hash(refreshToken),
+        refreshTokenHash: await hash(tokens.refreshToken),
       },
     });
-
-    return { accesToken };
   }
 
   async validate(id: string) {
-    const user = await this.userService.get(id);
+    const user = await this.userService.me(id);
 
     return user;
   }
 
-  private generateTokens(id: string): {
-    accesToken: string;
+  private async generateTokens(id: string): Promise<{
+    accessToken: string;
     refreshToken: string;
-  } {
-    const payload: JWTPayload = { id };
-
-    const accesToken = this.jwtServise.sign(payload, {
-      expiresIn: this.JWT_ACCES_TOKEN_TTL as ms.StringValue,
+  }> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        isEmailVerified: true,
+        role: true,
+      },
     });
 
-    const refreshToken = this.jwtServise.sign(payload, {
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const payload: JWTPayload = {
+      id: user.id,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.JWT_ACCESS_TOKEN_TTL as ms.StringValue,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
       expiresIn: this.JWT_REFRESH_TOKEN_TTL as ms.StringValue,
     });
 
-    return { accesToken, refreshToken };
+    return { accessToken, refreshToken };
   }
 
-  private setCookie(res: Response, value: string, expires: Date): void {
-    res.cookie('refreshToken', value, {
+  private setCookie(
+    res: Response,
+    tokens: { accessToken: string; refreshToken: string },
+    expires: Date,
+  ): void {
+    res.cookie('refreshToken', tokens.refreshToken, {
       expires,
       httpOnly: true,
       domain: this.COOKIE_DOMAIN,
       secure: !isDev(this.configService),
-      sameSite: isDev(this.configService) ? 'none' : 'lax',
+      sameSite: !isDev(this.configService) ? 'none' : 'lax',
+    });
+
+    res.cookie('accessToken', tokens.accessToken, {
+      expires,
+      httpOnly: true,
+      domain: this.COOKIE_DOMAIN,
+      secure: !isDev(this.configService),
+      sameSite: !isDev(this.configService) ? 'none' : 'lax',
     });
   }
 }

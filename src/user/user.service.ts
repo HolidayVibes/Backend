@@ -10,6 +10,7 @@ import { UpdateUserDto } from './dto/update.dto';
 import { YStorageService } from 'src/y-storage/y-storage.service';
 import { generateFileName } from 'src/common/utils/fileName.util';
 import { ConfigService } from '@nestjs/config';
+
 @Injectable()
 export class UserService {
   private readonly bucketName: string;
@@ -22,10 +23,15 @@ export class UserService {
     this.bucketName = this.configService.getOrThrow<string>('USER_BACKET');
   }
 
-  async get(id: string) {
+  async me(id: string) {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
+      },
+      omit: {
+        isEmailVerified: true,
+        passwordHash: true,
+        refreshTokenHash: true,
       },
     });
 

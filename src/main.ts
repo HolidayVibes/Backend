@@ -5,7 +5,7 @@ import { setupSwagger } from './common/utils/swagger.util';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -16,6 +16,10 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.setGlobalPrefix('api');
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,
@@ -24,7 +28,7 @@ async function bootstrap() {
 
   setupSwagger(app);
 
-  await app.listen(process.env['PORT'] ?? 3000);
+  await app.listen(process.env['APP_PORT'] ?? 8000);
 }
 
 bootstrap();

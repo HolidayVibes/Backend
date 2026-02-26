@@ -7,6 +7,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import * as multer from 'multer';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { UserModule } from './user/user.module';
     YStorageModule,
     AuthModule,
     UserModule,
+    MailModule,
   ],
 })
 export class AppModule {}

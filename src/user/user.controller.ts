@@ -14,18 +14,21 @@ import {
 import { UserService } from './user.service';
 import { JwtGuard } from 'src/auth/guards/jwt-guard.guard';
 import { UpdateUserDto } from './dto/update.dto';
-import { RequestWithUser } from './interfaces/RequestWithUser.interface';
+import { RequestWithUser } from '../common/interfaces/RequestWithUser.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { fileTypeFromBuffer } from 'file-type';
+import { EmailVerifiedGuard } from 'src/mail/guards/email-verifyed.guard';
 
 @Controller('user')
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, EmailVerifiedGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @Get('me')
   async getMe(@Req() req: RequestWithUser) {
-    return this.userService.get(req.user.id);
+    console.log(1);
+
+    return this.userService.me(req.user.id);
   }
 
   @Put()

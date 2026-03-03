@@ -33,8 +33,6 @@ export class AuthController {
     @Req() req: RequestWithCookies,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log(2);
-
     return this.authService.refresh(req, res);
   }
 

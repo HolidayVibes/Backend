@@ -111,38 +111,31 @@ export class AuthService {
     const refreshToken = req.cookies['refreshToken'];
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Не действительный токен');
+      throw new UnauthorizedException();
     }
 
-    const payload: JWTPayload = await this.jwtService.verify(refreshToken);
-
-    if (!payload) {
-      throw new UnauthorizedException('Не действительный токен');
-    }
+    const payload = await this.jwtService.verify(refreshToken);
 
     const user = await this.prismaService.user.findUnique({
-      where: {
-        id: payload.id,
-      },
-      select: {
-        refreshTokenHash: true,
-      },
+      where: { id: payload.id },
+      select: { refreshTokenHash: true },
     });
 
     if (!user || !user.refreshTokenHash) {
-      throw new UnauthorizedException('Не действительный токен');
+      throw new UnauthorizedException();
     }
 
-    const isValidRefreshToken = await verify(
-      user.refreshTokenHash,
-      refreshToken,
+    const isValid = await verify(user.refreshTokenHash, refreshToken);
+
+    if (!isValid) {
+      throw new UnauthorizedException();
+    }
+
+    await this.issueAccessTokenOnly(
+      res,
+      payload.id,
+      new Date(Date.now() + ms(this.COOKIE_TTL as ms.StringValue)),
     );
-
-    if (!isValidRefreshToken) {
-      throw new UnauthorizedException('Не действительный токен');
-    }
-
-    await this.auth(res, payload.id);
   }
 
   public async logout(res: Response): Promise<void> {
@@ -213,6 +206,20 @@ export class AuthService {
         refreshTokenHash: await hash(tokens.refreshToken),
       },
     });
+  }
+
+  private async issueAccessTokenOnly(res: Response, id: string, expires: Date) {
+    const { accessToken } = await this.generateTokens(id);
+
+    res.cookie('accessToken', accessToken, {
+      expires,
+      httpOnly: true,
+      domain: this.COOKIE_DOMAIN,
+      secure: !isDev(this.configService),
+      sameSite: !isDev(this.configService) ? 'none' : 'lax',
+    });
+
+    console.log(res);
   }
 
   async validate(id: string) {

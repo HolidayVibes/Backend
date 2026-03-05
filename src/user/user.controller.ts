@@ -26,8 +26,6 @@ export class UserController {
 
   @Get('me')
   async getMe(@Req() req: RequestWithUser) {
-    console.log(1);
-
     return this.userService.me(req.user.id);
   }
 

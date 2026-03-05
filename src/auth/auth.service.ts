@@ -218,8 +218,6 @@ export class AuthService {
       secure: !isDev(this.configService),
       sameSite: !isDev(this.configService) ? 'none' : 'lax',
     });
-
-    console.log(res);
   }
 
   async validate(id: string) {

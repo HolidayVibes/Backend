@@ -60,7 +60,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto, avatar: Express.Multer.File) {
+  async update(id: string, dto: UpdateUserDto, avatar?: Express.Multer.File) {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
@@ -71,29 +71,36 @@ export class UserService {
       throw new NotFoundException('Пользователь с таким id не найден');
     }
 
-    const url = await this.yStorageService
-      .convertToWebP(avatar, 80)
-      .then((buffer) => {
-        const key = `${user.id}/avatar/${generateFileName(avatar.originalname)}.webp`;
-        return this.yStorageService
-          .sendToYandex({
-            file: buffer,
-            key,
-            contentType: 'image/webp',
-            bucket_name: this.bucketName,
-          })
-          .then(
-            () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
-          );
-      });
+    if (avatar) {
+      const url = await this.yStorageService
+        .convertToWebP(avatar, 80)
+        .then((buffer) => {
+          const key = `${user.id}/avatar/${generateFileName(avatar.originalname)}.webp`;
+          return this.yStorageService
+            .sendToYandex({
+              file: buffer,
+              key,
+              contentType: 'image/webp',
+              bucket_name: this.bucketName,
+            })
+            .then(
+              () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
+            );
+        });
 
-    dto.avatarUrl = url;
+      dto.avatarUrl = url;
+    }
 
     const updatedUser = await this.prismaService.user.update({
       where: {
         id: user.id,
       },
       data: dto,
+      omit: {
+        isEmailVerified: true,
+        passwordHash: true,
+        refreshTokenHash: true,
+      },
     });
 
     return updatedUser;

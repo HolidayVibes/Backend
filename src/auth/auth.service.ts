@@ -136,6 +136,8 @@ export class AuthService {
       payload.id,
       new Date(Date.now() + ms(this.COOKIE_TTL as ms.StringValue)),
     );
+
+    return { success: true };
   }
 
   public async logout(res: Response): Promise<void> {
@@ -214,7 +216,7 @@ export class AuthService {
     res.cookie('accessToken', accessToken, {
       expires,
       httpOnly: true,
-      domain: this.COOKIE_DOMAIN,
+      domain: !isDev(this.configService) ? this.COOKIE_DOMAIN : undefined,
       secure: !isDev(this.configService),
       sameSite: !isDev(this.configService) ? 'none' : 'lax',
     });
@@ -268,7 +270,7 @@ export class AuthService {
     res.cookie('refreshToken', tokens.refreshToken, {
       expires,
       httpOnly: true,
-      domain: this.COOKIE_DOMAIN,
+      domain: !isDev(this.configService) ? this.COOKIE_DOMAIN : undefined,
       secure: !isDev(this.configService),
       sameSite: !isDev(this.configService) ? 'none' : 'lax',
     });
@@ -276,7 +278,7 @@ export class AuthService {
     res.cookie('accessToken', tokens.accessToken, {
       expires,
       httpOnly: true,
-      domain: this.COOKIE_DOMAIN,
+      domain: !isDev(this.configService) ? this.COOKIE_DOMAIN : undefined,
       secure: !isDev(this.configService),
       sameSite: !isDev(this.configService) ? 'none' : 'lax',
     });

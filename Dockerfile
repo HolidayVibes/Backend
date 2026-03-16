@@ -9,7 +9,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install the application dependencies
-RUN npm install
+RUN npm ci
 
 # Generate prisma types
 RUN npx prisma generate

@@ -1,0 +1,40 @@
+name: Holiday-Vibes backend deploy workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Backend to prod
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install SSH client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Add SSH private key
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
+          chmod 600 private_key
+
+      - name: Deploy via SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} <<'EOF'
+            if [ ! -d "/projects/holiday-vibes/Backend" ]; then
+              git clone --branch main git@github.com:HolidayVibes/Backend.git /projects/holiday-vibes/Backend
+            else
+              cd /projects/holiday-vibes/Backend
+              git reset --hard
+              git pull origin main
+            fi
+
+            cd /projects/holiday-vibes/Backend
+            docker compose down
+            docker compose up -d --build
+          EOF

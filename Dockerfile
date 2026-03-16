@@ -4,7 +4,7 @@ FROM node:22-alpine
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package.json and package-lock.json to the working directory,
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -24,4 +24,4 @@ RUN npm run build
 EXPOSE ${APP_PORT}
 
 # Command to run the application
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]

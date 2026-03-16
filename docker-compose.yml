@@ -1,18 +1,20 @@
 services:
-  api: 
+  api:
     build: .
-    ports: 
+    ports:
       - ${APP_PORT}:8000
     env_file:
       - .env
-    depends_on:
-      - postgres
-    restart: unless-stopped
     networks:
       - holiday-vibes
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:18-alpine
     restart: always
     env_file:
       - .env
@@ -22,8 +24,14 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - holiday-vibes
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d holiday-vibes"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
-    
+
 networks:
-  holiday-vibes:  
+  holiday-vibes:

@@ -38,10 +38,12 @@ export class UserController {
     @Body() dto: UpdateUserDto,
     @UploadedFile() avatar: Express.Multer.File,
   ) {
-    const type = await fileTypeFromBuffer(avatar.buffer);
+    if (avatar?.buffer) {
+      const type = await fileTypeFromBuffer(avatar.buffer);
 
-    if (!type || type.mime !== 'image/png') {
-      throw new BadRequestException('Разрешены только PNG файлы');
+      if (!type || type.mime !== 'image/png') {
+        throw new BadRequestException('Разрешены только PNG файлы');
+      }
     }
 
     return this.userService.update(req.user.id, dto, avatar);

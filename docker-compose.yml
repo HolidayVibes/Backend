@@ -1,8 +1,8 @@
 services:
   api:
     build: .
-    ports:
-      - ${APP_PORT}:8000
+    expose:
+      - ${APP_PORT}
     env_file:
       - .env
     networks:
@@ -18,14 +18,18 @@ services:
     restart: always
     env_file:
       - .env
-    ports:
-      - ${POSTGRES_PORT}:5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    expose:
+      - ${POSTGRES_PORT}
     volumes:
       - postgres_data:/var/lib/postgresql
     networks:
       - holiday-vibes
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root -d holiday-vibes"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}"]
       interval: 5s
       timeout: 5s
       retries: 5

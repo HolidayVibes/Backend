@@ -16,6 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { RequestWithCookies } from './intrerfaces/cookie.interface';
 import { UserService } from 'src/user/user.service';
 import { MailService } from 'src/mail/mail.service';
+import { EmptyRequest } from 'src/common/interfaces/emptyRequest.interface';
 
 @Injectable()
 export class AuthService {
@@ -48,7 +49,10 @@ export class AuthService {
     this.EMAIL_TTL = this.configService.getOrThrow<string>('EMAIL_TTL');
   }
 
-  public async register(res: Response, dto: RegisterDto) {
+  public async register(
+    res: Response,
+    dto: RegisterDto,
+  ): Promise<EmptyRequest> {
     dto.passwordHash = await hash(dto.passwordHash);
 
     const user = await this.userService.create(dto);
@@ -79,9 +83,11 @@ export class AuthService {
     await this.mailService.sendVerificationEmail(user.email, code);
 
     await this.auth(res, user.id);
+
+    return { success: true };
   }
 
-  public async login(res: Response, dto: LoginDto) {
+  public async login(res: Response, dto: LoginDto): Promise<EmptyRequest> {
     const { email, password } = dto;
 
     const user = await this.prismaService.user.findUnique({
@@ -105,9 +111,14 @@ export class AuthService {
     }
 
     await this.auth(res, user.id);
+
+    return { success: true };
   }
 
-  public async refresh(req: RequestWithCookies, res: Response) {
+  public async refresh(
+    req: RequestWithCookies,
+    res: Response,
+  ): Promise<EmptyRequest> {
     const refreshToken = req.cookies['refreshToken'];
 
     if (!refreshToken) {
@@ -140,15 +151,21 @@ export class AuthService {
     return { success: true };
   }
 
-  public async logout(res: Response): Promise<void> {
+  public async logout(res: Response): Promise<EmptyRequest> {
     this.setCookie(
       res,
       { refreshToken: 'refreshToken', accessToken: 'accessToken' },
       new Date(),
     );
+
+    return { success: true };
   }
 
-  public async verifyEmail(userId: string, code: string, res: Response) {
+  public async verifyEmail(
+    userId: string,
+    code: string,
+    res: Response,
+  ): Promise<EmptyRequest> {
     const verification = await this.prismaService.emailVerification.findUnique({
       where: { userId },
     });
@@ -189,6 +206,8 @@ export class AuthService {
     ]);
 
     await this.auth(res, userId);
+
+    return { success: true };
   }
 
   private async auth(res: Response, id: string) {

@@ -26,23 +26,27 @@ export class MusicService {
 
   async create(
     createMusicDto: CreateMusicDto,
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ): Promise<Music> {
-    const url = await this.yStorageService
-      .convertToWebP(file, 80)
-      .then((buffer) => {
-        const key = `music/${generateFileName(file.originalname)}.webp`;
-        return this.yStorageService
-          .sendToYandex({
-            file: buffer,
-            key,
-            contentType: 'image/webp',
-            bucket_name: this.bucketName,
-          })
-          .then(
-            () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
-          );
-      });
+    let url: string = '';
+
+    if (file) {
+      url = await this.yStorageService
+        .convertToWebP(file, 80)
+        .then((buffer) => {
+          const key = `music/${generateFileName(file.originalname)}.webp`;
+          return this.yStorageService
+            .sendToYandex({
+              file: buffer,
+              key,
+              contentType: 'image/webp',
+              bucket_name: this.bucketName,
+            })
+            .then(
+              () => `https://storage.yandexcloud.net/${this.bucketName}/${key}`,
+            );
+        });
+    }
 
     const music = await this.prisma.music.create({
       data: { ...createMusicDto, imgUrl: url },

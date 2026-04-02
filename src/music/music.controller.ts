@@ -31,10 +31,12 @@ export class MusicController {
     @Body() createMusicDto: CreateMusicDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const type = await fileTypeFromBuffer(file.buffer);
+    if (file?.buffer) {
+      const type = await fileTypeFromBuffer(file.buffer);
 
-    if (!type || type.mime !== 'image/png') {
-      throw new BadRequestException('Разрешены только PNG файлы');
+      if (!type || type.mime !== 'image/png') {
+        throw new BadRequestException('Разрешены только PNG файлы');
+      }
     }
 
     return this.musicService.create(createMusicDto, file);
